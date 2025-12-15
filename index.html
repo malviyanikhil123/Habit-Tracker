@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker - Premium</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Header Section -->
+    <header class="main-header">
+        <h1>Habit Tracker</h1>
+        <div class="header-info">
+            <span id="currentMonth"></span>
+            <button id="resetBtn" class="reset-btn">Reset Month</button>
+        </div>
+    </header>
+
+    <!-- Motivation Banner (rotates on refresh) -->
+    <section class="motivation-banner" aria-label="Daily motivation">
+        <div class="motivation-icon" aria-hidden="true">🌱</div>
+        <div class="motivation-text">
+            <div class="motivation-title">Today</div>
+            <div class="motivation-quote" id="motivationQuote">Consistency beats intensity. Focus on today.</div>
+        </div>
+    </section>
+
+    <!-- Smart Reminder Section -->
+    <div id="smartReminder" class="smart-reminder"></div>
+
+    <!-- Analytics Dashboard -->
+    <div class="analytics-dashboard">
+        <div class="analytics-card">
+            <div class="analytics-label">Monthly Completion</div>
+            <div class="analytics-value" id="monthlyCompletion">0%</div>
+        </div>
+        <div class="analytics-card">
+            <div class="analytics-label">Total Habits</div>
+            <div class="analytics-value" id="totalHabits">0</div>
+        </div>
+        <div class="analytics-card">
+            <div class="analytics-label">Best Streak</div>
+            <div class="analytics-value" id="bestStreak">0 days</div>
+        </div>
+        <div class="analytics-card">
+            <div class="analytics-label">Consistency Score</div>
+            <div class="analytics-value" id="consistencyScore">0%</div>
+        </div>
+    </div>
+
+    <!-- Graphs (Vanilla JS canvas) -->
+    <section class="charts" aria-label="Habit charts">
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2 class="chart-title">Total completion per habit</h2>
+            </div>
+            <div class="chart-canvas-wrap">
+                <canvas id="habitBarChart" height="220"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header">
+                <h2 class="chart-title">Progress % over days</h2>
+            </div>
+            <div class="chart-canvas-wrap">
+                <canvas id="progressLineChart" height="220"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Tracker Grid -->
+    <div class="tracker-wrapper">
+        <table class="tracker-table" id="trackerTable">
+            <thead>
+                <!-- Week Headers Row -->
+                <tr class="week-header-row">
+                    <th class="sticky-habit-header">Habit</th>
+                    <!-- Week 1 -->
+                    <th colspan="7" class="week-header">Week 1</th>
+                    <!-- Week 2 -->
+                    <th colspan="7" class="week-header">Week 2</th>
+                    <!-- Week 3 -->
+                    <th colspan="7" class="week-header">Week 3</th>
+                    <!-- Week 4 -->
+                    <th colspan="7" class="week-header">Week 4</th>
+                    <!-- Week 5 -->
+                    <th colspan="3" class="week-header">Week 5</th>
+                    <th class="sticky-total-header">Total</th>
+                    <th class="sticky-progress-header">Progress</th>
+                </tr>
+                <!-- Day Numbers Row -->
+                <tr class="day-header-row">
+                    <th class="sticky-habit-header">Name</th>
+                    <!-- Days 1-31 -->
+                </tr>
+            </thead>
+            <tbody id="habitRows">
+                <!-- Habit rows will be generated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add Habit Button -->
+    <button id="addHabitBtn" class="add-habit-btn">+ Add Habit</button>
+
+    <!-- Weekly Breakdown -->
+    <div class="weekly-breakdown">
+        <h2>Weekly Breakdown</h2>
+        <div class="weeks-container" id="weeksContainer">
+            <!-- Weekly stats will be generated here -->
+        </div>
+    </div>
+    </div>
+
+    <script src="script.js"></script>
+
+</html>
