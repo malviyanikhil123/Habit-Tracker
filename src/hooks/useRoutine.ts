@@ -1,9 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { RoutineItem, ScheduleType, DailyRoutines } from '@/types';
-import { DAILY_ROUTINES } from '@/constants';
 import { getCurrentDayName, getTodayDayOfWeek, parseTimeRange, getCurrentMinutes } from '@/utils';
 
 const CUSTOM_ROUTINES_KEY = 'habitTracker_customRoutines';
+
+// Empty routines for when user hasn't created any
+const EMPTY_ROUTINES: DailyRoutines = {
+    monday: [],
+    tuesday: [],
+    wednesday: [],
+    thursday: [],
+    friday: [],
+    saturday: [],
+    sunday: []
+};
 
 interface UseRoutineReturn {
     currentDayName: string;
@@ -27,7 +37,7 @@ export function useRoutine(): UseRoutineReturn {
         return saved ? JSON.parse(saved) : null;
     });
 
-    const routines = customRoutines || DAILY_ROUTINES;
+    const routines = customRoutines || EMPTY_ROUTINES;
     const hasCustomRoutines = customRoutines !== null;
 
     const setCustomRoutines = useCallback((newRoutines: DailyRoutines) => {
@@ -41,7 +51,7 @@ export function useRoutine(): UseRoutineReturn {
     }, []);
 
     const updateRoutineForSchedule = useCallback((scheduleType: ScheduleType, newRoutines: RoutineItem[]) => {
-        const currentRoutines = customRoutines || DAILY_ROUTINES;
+        const currentRoutines = customRoutines || EMPTY_ROUTINES;
         const updated: DailyRoutines = {
             ...currentRoutines,
             [scheduleType]: newRoutines

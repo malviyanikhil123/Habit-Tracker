@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { Login } from './Login';
 import { Signup } from './Signup';
 
+/**
+ * Auth form props with async handlers for Supabase integration
+ */
 interface AuthFormProps {
-    onLogin: (email: string, password: string) => boolean;
-    onSignup: (name: string, email: string, password: string) => boolean;
+    onLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    onSignup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const AuthForm = ({ onLogin, onSignup }: AuthFormProps) => {

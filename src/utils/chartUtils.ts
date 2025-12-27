@@ -70,7 +70,11 @@ export function renderBarChart(
         return;
     }
 
-    const maxValue = Math.max(1, ...data.map(d => d.value));
+    // Limit to top 8 habits by value for cleaner display
+    const sortedData = [...data].sort((a, b) => b.value - a.value);
+    const displayData = sortedData.slice(0, 8);
+
+    const maxValue = Math.max(1, ...displayData.map(d => d.value));
     const padding = { top: 16, right: 10, bottom: 46, left: 28 };
     const chartW = width - padding.left - padding.right;
     const chartH = height - padding.top - padding.bottom;
@@ -91,10 +95,10 @@ export function renderBarChart(
         ctx.stroke();
     }
 
-    const barSlot = chartW / data.length;
-    const barW = Math.max(12, Math.min(26, barSlot * 0.6));
+    const barSlot = chartW / displayData.length;
+    const barW = Math.max(12, Math.min(36, barSlot * 0.6));
 
-    data.forEach((d, i) => {
+    displayData.forEach((d, i) => {
         const x = padding.left + i * barSlot + (barSlot - barW) / 2;
         const h = (d.value / maxValue) * chartH;
         const y = padding.top + chartH - h;
@@ -109,13 +113,6 @@ export function renderBarChart(
         ctx.font = '12px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(String(d.value), x + barW / 2, y - 6);
-
-        // Label
-        const label = (d.name || '').trim();
-        const short = label.length > 10 ? `${label.slice(0, 10)}…` : label;
-        ctx.fillStyle = text;
-        ctx.font = '11px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif';
-        ctx.fillText(short, x + barW / 2, padding.top + chartH + 28);
     });
 }
 

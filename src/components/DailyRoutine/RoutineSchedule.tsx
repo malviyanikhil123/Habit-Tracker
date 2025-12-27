@@ -28,13 +28,21 @@ export function RoutineSchedule({ scheduleType, items, isActive, currentTask }: 
             id={`${scheduleType}-schedule`}
             className={`routine-schedule ${isActive ? 'active' : ''}`}
         >
-            {items.map((item, index) => (
-                <ScheduleItem
-                    key={`${scheduleType}-${index}`}
-                    item={item}
-                    isCurrent={currentTask?.time === item.time}
-                />
-            ))}
+            {items.length === 0 ? (
+                <div className="routine-empty-state">
+                    <span className="routine-empty-icon">📝</span>
+                    <p>No routine set for this day</p>
+                    <p className="routine-empty-hint">Click "Edit" to create your daily routine</p>
+                </div>
+            ) : (
+                items.map((item, index) => (
+                    <ScheduleItem
+                        key={`${scheduleType}-${index}`}
+                        item={item}
+                        isCurrent={currentTask?.time === item.time}
+                    />
+                ))
+            )}
         </div>
     );
 }

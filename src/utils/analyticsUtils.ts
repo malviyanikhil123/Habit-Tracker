@@ -140,17 +140,23 @@ export function getHabitChartData(habits: Habit[], daysInMonth: number) {
 
 /**
  * Get progress line chart data
+ * Shows daily completion percentage (what % of habits were completed each day)
  */
 export function getProgressChartData(habits: Habit[], daysInMonth: number): number[] {
     const points: number[] = [];
 
+    if (habits.length === 0) {
+        return points;
+    }
+
     for (let day = 1; day <= daysInMonth; day++) {
-        let done = 0;
+        let completedCount = 0;
         habits.forEach(h => {
-            done += h.days.slice(0, day).filter(Boolean).length;
+            if (h.days[day - 1]) {
+                completedCount++;
+            }
         });
-        const possible = habits.length * day;
-        const pct = possible > 0 ? (done / possible) * 100 : 0;
+        const pct = (completedCount / habits.length) * 100;
         points.push(pct);
     }
 

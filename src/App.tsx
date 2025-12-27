@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import {
     Header,
@@ -10,36 +10,29 @@ import {
     TrackerTable,
     AddHabitButton,
     WeeklyBreakdown,
-    AuthForm
+    AuthForm,
+    NewUserOnboarding
 } from '@/components';
 import { useHabits, useAnalytics, useMotivation, useRoutine, useAuth } from '@/hooks';
+import { DailyRoutines } from '@/types';
 import './styles/App.css';
 
 function App() {
-    const { isAuthenticated, isLoading, user, login, signup, logout } = useAuth();
+    const { isAuthenticated, isLoading, user, login, signup, logout, isNewSignup, clearNewSignupFlag } = useAuth();
 
-    // Force scroll to top before render (runs synchronously before paint)
-    useLayoutEffect(() => {
-        window.scrollTo(0, 0);
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-    });
+    // Track if user has completed onboarding (for new users with no habits)
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [onboardingChecked, setOnboardingChecked] = useState(false);
 
-    // Also scroll to top after render
-    useEffect(() => {
-        window.scrollTo(0, 0);
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
+    // Get onboarding completed key for current user
+    const getOnboardingKey = (userId: string) => `habit_tracker_onboarding_${userId}`;
 
-        // Set a timer to force scroll again after a brief delay
-        const timer = setTimeout(() => {
-            window.scrollTo(0, 0);
-            document.documentElement.scrollTop = 0;
-            document.body.scrollTop = 0;
-        }, 100);
+    // Mark onboarding as completed
+    const markOnboardingComplete = (userId: string) => {
+        localStorage.setItem(getOnboardingKey(userId), 'true');
+    };
 
-        return () => clearTimeout(timer);
-    }, [isAuthenticated]);
+    // Pass user ID to useHabits for Supabase queries
     const {
         habits,
         currentMonth,
@@ -51,8 +44,25 @@ function App() {
         updateHabitName,
         toggleDay,
         resetMonth,
-        hasAnyChecked
-    } = useHabits();
+        hasAnyChecked,
+        isLoading: habitsLoading,
+        refetch: refetchHabits
+    } = useHabits({ userId: user?.id ?? null });
+
+    // Check if new user needs onboarding (ONLY for new signups, not existing users logging in)
+    useEffect(() => {
+        if (isAuthenticated && user?.id && !habitsLoading && !onboardingChecked) {
+            console.log('Checking onboarding:', { isNewSignup, habitsLength: habits.length });
+            setOnboardingChecked(true);
+            // Only show onboarding if this is a NEW SIGNUP (not a login)
+            if (isNewSignup && habits.length === 0) {
+                console.log('Showing onboarding for new signup');
+                setShowOnboarding(true);
+            } else {
+                console.log('Not showing onboarding:', { isNewSignup, hasHabits: habits.length > 0 });
+            }
+        }
+    }, [isAuthenticated, habitsLoading, habits.length, onboardingChecked, user?.id, isNewSignup]);
 
     const {
         monthlyCompletion,
@@ -78,8 +88,23 @@ function App() {
         updateRoutineForSchedule
     } = useRoutine();
 
-    // Show loading state
-    if (isLoading) {
+    // Handle onboarding completion with optional custom routines
+    const handleOnboardingComplete = (customRoutines?: DailyRoutines) => {
+        if (user?.id) {
+            markOnboardingComplete(user.id);
+        }
+        // Clear the new signup flag
+        clearNewSignupFlag();
+        // If user selected custom routines, save them
+        if (customRoutines) {
+            setCustomRoutines(customRoutines);
+        }
+        setShowOnboarding(false);
+        refetchHabits();
+    };
+
+    // Show loading state (auth or habits loading)
+    if (isLoading || (isAuthenticated && habitsLoading)) {
         return (
             <div className="loading-container">
                 <div className="loading-spinner">Loading...</div>
@@ -90,6 +115,17 @@ function App() {
     // Show auth form if not authenticated
     if (!isAuthenticated) {
         return <AuthForm onLogin={login} onSignup={signup} />;
+    }
+
+    // Show onboarding for new users
+    if (showOnboarding && user) {
+        return (
+            <NewUserOnboarding
+                userId={user.id}
+                userName={user.name}
+                onComplete={handleOnboardingComplete}
+            />
+        );
     }
 
     return (

@@ -1,6 +1,7 @@
 // Habit Types
+// Updated to use string IDs for Supabase UUID compatibility
 export interface Habit {
-    id: number;
+    id: string;      // UUID from Supabase
     name: string;
     days: boolean[];
 }

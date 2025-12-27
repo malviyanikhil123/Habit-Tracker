@@ -5,9 +5,9 @@ interface HabitRowProps {
     habit: Habit;
     daysInMonth: number;
     todayDay: number | null;
-    onNameChange: (habitId: number, name: string) => void;
-    onDelete: (habitId: number) => void;
-    onToggleDay: (habitId: number, day: number) => void;
+    onNameChange: (habitId: string, name: string) => void;
+    onDelete: (habitId: string) => void;
+    onToggleDay: (habitId: string, day: number) => void;
 }
 
 export function HabitRow({
@@ -69,7 +69,7 @@ export function HabitRow({
     return (
         <tr>
             {/* Habit name cell */}
-            <td className="habit-name-cell">
+            <td className="habit-name-cell" style={{ backgroundColor: '#CBF1F5' }}>
                 <div className="habit-name-cell-content">
                     <input
                         type="text"

@@ -86,3 +86,57 @@ export const DAILY_ROUTINES: DailyRoutines = {
         { time: '6:00 PM onwards', task: 'Relax, Family, Entertainment', icon: '👨‍👩‍👧', type: 'night' }
     ]
 };
+
+// Default routine task suggestions for onboarding
+export interface RoutineTaskSuggestion {
+    task: string;
+    icon: string;
+    type: 'morning' | 'study' | 'work' | 'project' | 'break' | 'evening' | 'night';
+    category: string;
+    defaultTime?: string;
+}
+
+export const DEFAULT_ROUTINE_SUGGESTIONS: RoutineTaskSuggestion[] = [
+    // Morning Routines
+    { task: 'Wake up, freshen up', icon: '🌅', type: 'morning', category: 'Morning', defaultTime: '6:30 AM – 7:00 AM' },
+    { task: 'Morning Exercise', icon: '🏃', type: 'morning', category: 'Morning', defaultTime: '6:00 AM – 7:00 AM' },
+    { task: 'Meditation', icon: '🧘', type: 'morning', category: 'Morning', defaultTime: '6:30 AM – 7:00 AM' },
+    { task: 'Breakfast', icon: '🍳', type: 'break', category: 'Morning', defaultTime: '8:00 AM – 8:30 AM' },
+    { task: 'Get Ready', icon: '👔', type: 'morning', category: 'Morning', defaultTime: '8:30 AM – 9:00 AM' },
+
+    // Work/Study
+    { task: 'Office Hours', icon: '🏢', type: 'work', category: 'Work', defaultTime: '9:00 AM – 6:00 PM' },
+    { task: 'Remote Work', icon: '💻', type: 'work', category: 'Work', defaultTime: '9:00 AM – 5:00 PM' },
+    { task: 'College/School', icon: '🎓', type: 'work', category: 'Work', defaultTime: '8:00 AM – 3:00 PM' },
+    { task: 'Study Session', icon: '📚', type: 'study', category: 'Work', defaultTime: '7:00 AM – 9:00 AM' },
+
+    // Learning
+    { task: 'DSA Practice', icon: '💻', type: 'study', category: 'Learning', defaultTime: '7:00 AM – 8:00 AM' },
+    { task: 'English Practice', icon: '📖', type: 'study', category: 'Learning', defaultTime: '8:00 AM – 8:30 AM' },
+    { task: 'Coding Practice', icon: '⌨️', type: 'study', category: 'Learning', defaultTime: '7:00 PM – 8:00 PM' },
+    { task: 'Online Course', icon: '🎯', type: 'study', category: 'Learning', defaultTime: '8:00 PM – 9:00 PM' },
+    { task: 'Reading Books', icon: '📕', type: 'study', category: 'Learning', defaultTime: '9:00 PM – 10:00 PM' },
+
+    // Breaks
+    { task: 'Lunch Break', icon: '🍽️', type: 'break', category: 'Breaks', defaultTime: '12:00 PM – 1:00 PM' },
+    { task: 'Tea/Coffee Break', icon: '☕', type: 'break', category: 'Breaks', defaultTime: '4:00 PM – 4:30 PM' },
+    { task: 'Travel/Commute', icon: '🚗', type: 'break', category: 'Breaks', defaultTime: '6:00 PM – 7:00 PM' },
+    { task: 'Rest Time', icon: '🛋️', type: 'break', category: 'Breaks', defaultTime: '3:00 PM – 4:00 PM' },
+
+    // Evening
+    { task: 'Dinner', icon: '🍛', type: 'evening', category: 'Evening', defaultTime: '8:00 PM – 8:30 PM' },
+    { task: 'Walk/Exercise', icon: '🚶', type: 'evening', category: 'Evening', defaultTime: '6:00 PM – 7:00 PM' },
+    { task: 'Gym', icon: '🏋️', type: 'evening', category: 'Evening', defaultTime: '6:00 PM – 7:30 PM' },
+    { task: 'Family Time', icon: '👨‍👩‍👧', type: 'evening', category: 'Evening', defaultTime: '7:00 PM – 8:00 PM' },
+
+    // Night
+    { task: 'Wind Down', icon: '🧘', type: 'night', category: 'Night', defaultTime: '10:00 PM – 10:30 PM' },
+    { task: 'Entertainment', icon: '🎮', type: 'night', category: 'Night', defaultTime: '9:00 PM – 10:00 PM' },
+    { task: 'Sleep', icon: '😴', type: 'night', category: 'Night', defaultTime: '10:30 PM' },
+    { task: 'Journaling', icon: '📝', type: 'night', category: 'Night', defaultTime: '10:00 PM – 10:30 PM' },
+
+    // Projects
+    { task: 'Side Project', icon: '🚀', type: 'project', category: 'Projects', defaultTime: '8:00 PM – 10:00 PM' },
+    { task: 'Personal Project', icon: '🛠️', type: 'project', category: 'Projects', defaultTime: '7:00 PM – 9:00 PM' },
+    { task: 'Freelance Work', icon: '💼', type: 'project', category: 'Projects', defaultTime: '8:00 PM – 10:00 PM' },
+];

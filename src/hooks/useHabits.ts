@@ -1,165 +1,304 @@
-import { useState, useCallback, useMemo } from 'react';
-import { Habit, StorageData } from '@/types';
+/**
+ * useHabits Hook - Supabase Integration
+ * 
+ * Manages habit data using Supabase as the backend.
+ * All data is stored in the cloud and synced in real-time.
+ * 
+ * Features:
+ * - CRUD operations for habits
+ * - Daily completion tracking via habit_logs
+ * - Automatic user association via user_id
+ * - Loading and error states
+ */
+
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { getDaysInMonth } from '@/utils';
-import { STORAGE_KEY } from '@/constants';
+import {
+    getHabits,
+    createHabit,
+    updateHabit as updateHabitService,
+    deleteHabit as deleteHabitService,
+    getHabitLogsByHabitIds,
+    toggleHabitLog,
+    deleteHabitLogsForMonth
+} from '@/services/habitService';
+import type { Habit as SupabaseHabit, HabitLog } from '@/types/database';
+
+// Local habit type that includes computed days array
+export interface LocalHabit {
+    id: string;           // UUID from Supabase
+    name: string;         // Habit title
+    days: boolean[];      // Computed from habit_logs for current month
+}
 
 interface UseHabitsReturn {
-    habits: Habit[];
+    habits: LocalHabit[];
     currentMonth: number;
     currentYear: number;
     daysInMonth: number;
     todayDay: number | null;
-    addHabit: () => void;
-    deleteHabit: (habitId: number) => void;
-    updateHabitName: (habitId: number, newName: string) => void;
-    toggleDay: (habitId: number, day: number) => void;
-    resetMonth: () => void;
+    addHabit: () => Promise<void>;
+    deleteHabit: (habitId: string) => Promise<void>;
+    updateHabitName: (habitId: string, newName: string) => Promise<void>;
+    toggleDay: (habitId: string, day: number) => Promise<void>;
+    resetMonth: () => Promise<void>;
     hasAnyChecked: boolean;
+    isLoading: boolean;
+    error: string | null;
+    refetch: () => Promise<void>;
 }
 
-function loadFromStorage(): { habits: Habit[]; currentMonth: number; currentYear: number } {
+interface UseHabitsProps {
+    userId: string | null;
+}
+
+export function useHabits({ userId }: UseHabitsProps): UseHabitsReturn {
     const now = new Date();
-    const defaultMonth = now.getMonth();
-    const defaultYear = now.getFullYear();
+    const [currentMonth] = useState(now.getMonth());
+    const [currentYear] = useState(now.getFullYear());
 
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            const data: StorageData = JSON.parse(stored);
+    // Store raw Supabase data
+    const [supabaseHabits, setSupabaseHabits] = useState<SupabaseHabit[]>([]);
+    const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
 
-            // Check if we need to reset for a new month
-            if (data.currentMonth !== now.getMonth() || data.currentYear !== now.getFullYear()) {
-                // New month detected - reset days but keep habits
-                return {
-                    habits: data.habits.map(h => ({
-                        ...h,
-                        days: Array(31).fill(false)
-                    })),
-                    currentMonth: defaultMonth,
-                    currentYear: defaultYear
-                };
-            }
-
-            return {
-                habits: data.habits || [],
-                currentMonth: data.currentMonth,
-                currentYear: data.currentYear
-            };
-        }
-    } catch (e) {
-        console.error('Error loading from localStorage:', e);
-    }
-
-    return { habits: [], currentMonth: defaultMonth, currentYear: defaultYear };
-}
-
-function saveToStorage(habits: Habit[], currentMonth: number, currentYear: number): void {
-    const data: StorageData = { habits, currentMonth, currentYear };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-export function useHabits(): UseHabitsReturn {
-    const [state, setState] = useState(() => {
-        const { habits, currentMonth, currentYear } = loadFromStorage();
-        return {
-            habits,
-            currentMonth,
-            currentYear
-        };
-    });
+    // Loading and error states
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const daysInMonth = useMemo(
-        () => getDaysInMonth(state.currentYear, state.currentMonth),
-        [state.currentYear, state.currentMonth]
+        () => getDaysInMonth(currentYear, currentMonth),
+        [currentYear, currentMonth]
     );
 
     const todayDay = useMemo(() => {
-        const now = new Date();
-        if (now.getMonth() === state.currentMonth && now.getFullYear() === state.currentYear) {
+        if (now.getMonth() === currentMonth && now.getFullYear() === currentYear) {
             return now.getDate();
         }
         return null;
-    }, [state.currentMonth, state.currentYear]);
+    }, [currentMonth, currentYear]);
+
+    /**
+     * Convert Supabase habits + logs to local habit format
+     * Computes the days array from habit_logs
+     */
+    const habits: LocalHabit[] = useMemo(() => {
+        return supabaseHabits.map(habit => {
+            // Create days array from logs
+            const days = Array(31).fill(false);
+
+            habitLogs
+                .filter(log => log.habit_id === habit.id)
+                .forEach(log => {
+                    // Parse date string directly to avoid timezone issues
+                    // log_date format is "YYYY-MM-DD"
+                    const dateParts = log.log_date.split('-');
+                    const dayIndex = parseInt(dateParts[2], 10) - 1;
+                    if (dayIndex >= 0 && dayIndex < 31) {
+                        days[dayIndex] = log.status;
+                    }
+                });
+
+            return {
+                id: habit.id,
+                name: habit.title,
+                days
+            };
+        });
+    }, [supabaseHabits, habitLogs]);
 
     const hasAnyChecked = useMemo(
-        () => state.habits.some(habit => habit.days.slice(0, daysInMonth).some(day => day === true)),
-        [state.habits, daysInMonth]
+        () => habits.some(habit => habit.days.slice(0, daysInMonth).some(day => day === true)),
+        [habits, daysInMonth]
     );
 
-    const addHabit = useCallback(() => {
-        setState(prev => {
-            const newHabits = [
-                ...prev.habits,
-                {
-                    id: Date.now(),
-                    name: '',
-                    days: Array(31).fill(false)
+    /**
+     * Fetch habits and logs from Supabase
+     */
+    const fetchData = useCallback(async () => {
+        if (!userId) {
+            setSupabaseHabits([]);
+            setHabitLogs([]);
+            setIsLoading(false);
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // Fetch habits
+            const habitsResult = await getHabits();
+            if (!habitsResult.success) {
+                throw new Error(habitsResult.error);
+            }
+
+            const fetchedHabits = habitsResult.data || [];
+            setSupabaseHabits(fetchedHabits);
+
+            // Fetch logs for these habits
+            if (fetchedHabits.length > 0) {
+                const habitIds = fetchedHabits.map(h => h.id);
+                const logsResult = await getHabitLogsByHabitIds(habitIds, currentYear, currentMonth);
+
+                if (!logsResult.success) {
+                    throw new Error(logsResult.error);
                 }
-            ];
-            saveToStorage(newHabits, prev.currentMonth, prev.currentYear);
-            return { ...prev, habits: newHabits };
-        });
+
+                setHabitLogs(logsResult.data || []);
+            } else {
+                setHabitLogs([]);
+            }
+        } catch (err) {
+            console.error('Error fetching habits:', err);
+            setError(err instanceof Error ? err.message : 'Failed to fetch habits');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [userId, currentYear, currentMonth]);
+
+    // Reset loading state when userId changes (to prevent race condition on login)
+    useEffect(() => {
+        if (userId) {
+            setIsLoading(true);
+        }
+    }, [userId]);
+
+    // Fetch data on mount and when userId changes
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    /**
+     * Add a new habit
+     */
+    const addHabit = useCallback(async () => {
+        if (!userId) return;
+
+        try {
+            const result = await createHabit('', userId);
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+
+            // Add to local state
+            if (result.data) {
+                setSupabaseHabits(prev => [...prev, result.data!]);
+            }
+        } catch (err) {
+            console.error('Error adding habit:', err);
+            setError(err instanceof Error ? err.message : 'Failed to add habit');
+        }
+    }, [userId]);
+
+    /**
+     * Delete a habit
+     */
+    const deleteHabit = useCallback(async (habitId: string) => {
+        try {
+            const result = await deleteHabitService(habitId);
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+
+            // Remove from local state
+            setSupabaseHabits(prev => prev.filter(h => h.id !== habitId));
+            setHabitLogs(prev => prev.filter(l => l.habit_id !== habitId));
+        } catch (err) {
+            console.error('Error deleting habit:', err);
+            setError(err instanceof Error ? err.message : 'Failed to delete habit');
+        }
     }, []);
 
-    const deleteHabit = useCallback((habitId: number) => {
-        setState(prev => {
-            const newHabits = prev.habits.filter(h => h.id !== habitId);
-            saveToStorage(newHabits, prev.currentMonth, prev.currentYear);
-            return { ...prev, habits: newHabits };
-        });
-    }, []);
+    /**
+     * Update a habit's name
+     */
+    const updateHabitName = useCallback(async (habitId: string, newName: string) => {
+        try {
+            const result = await updateHabitService(habitId, newName);
+            if (!result.success) {
+                throw new Error(result.error);
+            }
 
-    const updateHabitName = useCallback((habitId: number, newName: string) => {
-        setState(prev => {
-            const newHabits = prev.habits.map(h =>
-                h.id === habitId ? { ...h, name: newName } : h
+            // Update local state
+            setSupabaseHabits(prev =>
+                prev.map(h => h.id === habitId ? { ...h, title: newName } : h)
             );
-            saveToStorage(newHabits, prev.currentMonth, prev.currentYear);
-            return { ...prev, habits: newHabits };
-        });
+        } catch (err) {
+            console.error('Error updating habit:', err);
+            setError(err instanceof Error ? err.message : 'Failed to update habit');
+        }
     }, []);
 
-    const toggleDay = useCallback((habitId: number, day: number) => {
-        setState(prev => {
-            // Only allow toggling for today and future days
-            const now = new Date();
-            let todayDayNum: number | null = null;
-            if (now.getMonth() === prev.currentMonth && now.getFullYear() === prev.currentYear) {
-                todayDayNum = now.getDate();
+    /**
+     * Toggle a day's completion status
+     */
+    const toggleDay = useCallback(async (habitId: string, day: number) => {
+        // Only allow toggling for today and future days
+        if (todayDay !== null && day < todayDay) {
+            return; // Don't allow changes for past days
+        }
+
+        // Calculate the date string manually to avoid timezone issues
+        // Format: YYYY-MM-DD (month is 0-indexed, so add 1)
+        const year = currentYear;
+        const month = String(currentMonth + 1).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        const dateString = `${year}-${month}-${dayStr}`;
+
+        // Get current status
+        const currentLog = habitLogs.find(
+            l => l.habit_id === habitId && l.log_date === dateString
+        );
+        const newStatus = !currentLog?.status;
+
+        try {
+            const result = await toggleHabitLog(habitId, dateString, newStatus);
+            if (!result.success) {
+                throw new Error(result.error);
             }
 
-            if (todayDayNum !== null && day < todayDayNum) {
-                return prev; // Don't allow changes for past days
+            // Update local state
+            if (result.data) {
+                setHabitLogs(prev => {
+                    const existing = prev.find(l => l.id === result.data!.id);
+                    if (existing) {
+                        return prev.map(l => l.id === result.data!.id ? result.data! : l);
+                    }
+                    return [...prev, result.data!];
+                });
+            }
+        } catch (err) {
+            console.error('Error toggling day:', err);
+            setError(err instanceof Error ? err.message : 'Failed to toggle day');
+        }
+    }, [habitLogs, todayDay, currentYear, currentMonth]);
+
+    /**
+     * Reset all habits for the current month
+     */
+    const resetMonth = useCallback(async () => {
+        if (supabaseHabits.length === 0) return;
+
+        try {
+            const habitIds = supabaseHabits.map(h => h.id);
+            const result = await deleteHabitLogsForMonth(habitIds, currentYear, currentMonth);
+
+            if (!result.success) {
+                throw new Error(result.error);
             }
 
-            const newHabits = prev.habits.map(h => {
-                if (h.id === habitId) {
-                    const newDays = [...h.days];
-                    newDays[day - 1] = !newDays[day - 1];
-                    return { ...h, days: newDays };
-                }
-                return h;
-            });
-            saveToStorage(newHabits, prev.currentMonth, prev.currentYear);
-            return { ...prev, habits: newHabits };
-        });
-    }, []);
-
-    const resetMonth = useCallback(() => {
-        setState(prev => {
-            const newHabits = prev.habits.map(h => ({
-                ...h,
-                days: Array(31).fill(false)
-            }));
-            saveToStorage(newHabits, prev.currentMonth, prev.currentYear);
-            return { ...prev, habits: newHabits };
-        });
-    }, []);
+            // Clear logs from local state
+            setHabitLogs([]);
+        } catch (err) {
+            console.error('Error resetting month:', err);
+            setError(err instanceof Error ? err.message : 'Failed to reset month');
+        }
+    }, [supabaseHabits, currentYear, currentMonth]);
 
     return {
-        habits: state.habits,
-        currentMonth: state.currentMonth,
-        currentYear: state.currentYear,
+        habits,
+        currentMonth,
+        currentYear,
         daysInMonth,
         todayDay,
         addHabit,
@@ -167,6 +306,9 @@ export function useHabits(): UseHabitsReturn {
         updateHabitName,
         toggleDay,
         resetMonth,
-        hasAnyChecked
+        hasAnyChecked,
+        isLoading,
+        error,
+        refetch: fetchData
     };
 }

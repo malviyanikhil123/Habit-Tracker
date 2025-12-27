@@ -1,7 +1,10 @@
 import { useState, FormEvent } from 'react';
 
+/**
+ * Login component with async Supabase authentication
+ */
 interface LoginProps {
-    onLogin: (email: string, password: string) => boolean;
+    onLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
     onSwitchToSignup: () => void;
 }
 
@@ -9,11 +12,13 @@ export const Login = ({ onLogin, onSwitchToSignup }: LoginProps) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError('');
 
+        // Basic validation
         if (!email || !password) {
             setError('Please fill in all fields');
             return;
@@ -24,9 +29,21 @@ export const Login = ({ onLogin, onSwitchToSignup }: LoginProps) => {
             return;
         }
 
-        const success = onLogin(email, password);
-        if (!success) {
-            setError('Invalid credentials');
+        // Start loading
+        setIsLoading(true);
+
+        try {
+            // Call async login function
+            const result = await onLogin(email, password);
+
+            if (!result.success) {
+                setError(result.error || 'Login failed');
+            }
+            // If successful, the auth state change will redirect automatically
+        } catch (err) {
+            setError('An unexpected error occurred');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -48,6 +65,7 @@ export const Login = ({ onLogin, onSwitchToSignup }: LoginProps) => {
                         className="auth-form__input"
                         placeholder="your@email.com"
                         autoComplete="email"
+                        disabled={isLoading}
                     />
                 </div>
 
@@ -63,13 +81,18 @@ export const Login = ({ onLogin, onSwitchToSignup }: LoginProps) => {
                         className="auth-form__input"
                         placeholder="••••••••"
                         autoComplete="current-password"
+                        disabled={isLoading}
                     />
                 </div>
 
                 {error && <div className="auth-form__error">{error}</div>}
 
-                <button type="submit" className="auth-form__button">
-                    Log In
+                <button
+                    type="submit"
+                    className="auth-form__button"
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'Logging in...' : 'Log In'}
                 </button>
             </form>
 
@@ -79,6 +102,7 @@ export const Login = ({ onLogin, onSwitchToSignup }: LoginProps) => {
                     type="button"
                     onClick={onSwitchToSignup}
                     className="auth-form__switch-btn"
+                    disabled={isLoading}
                 >
                     Sign Up
                 </button>

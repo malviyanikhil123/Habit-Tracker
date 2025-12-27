@@ -1,97 +1,237 @@
-import { useState, useEffect } from 'react';
-import { User, AuthState } from '@/types';
+/**
+ * useAuth Hook - Supabase Integration
+ * 
+ * Manages authentication state using Supabase Auth.
+ * Handles login, signup, logout, and session management.
+ * 
+ * Features:
+ * - Automatic session restoration on page load
+ * - Real-time auth state changes
+ * - Loading states for better UX
+ * - Error handling
+ */
 
-const AUTH_STORAGE_KEY = 'habit_tracker_auth';
+import { useState, useEffect, useCallback } from 'react';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import {
+    signIn,
+    signUp,
+    signOut,
+    getSession,
+    onAuthStateChange
+} from '@/services/authService';
 
-export const useAuth = () => {
+// User type for the app (simplified from Supabase User)
+export interface AppUser {
+    id: string;
+    email: string;
+    name: string;
+    createdAt: string;
+}
+
+export interface AuthState {
+    user: AppUser | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+}
+
+export interface UseAuthReturn extends AuthState {
+    login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string; isNewUser?: boolean }>;
+    logout: () => Promise<void>;
+    isNewSignup: boolean;
+    clearNewSignupFlag: () => void;
+}
+
+/**
+ * Convert Supabase User to App User format
+ */
+const toAppUser = (user: SupabaseUser): AppUser => ({
+    id: user.id,
+    email: user.email || '',
+    name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+    createdAt: user.created_at
+});
+
+export const useAuth = (): UseAuthReturn => {
+    // Auth state
     const [authState, setAuthState] = useState<AuthState>({
         user: null,
         isAuthenticated: false,
-        isLoading: true
+        isLoading: true // Start loading until we check session
     });
 
-    // Load user from localStorage on mount
-    useEffect(() => {
-        const storedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-        if (storedAuth) {
-            try {
-                const user = JSON.parse(storedAuth) as User;
-                setAuthState({
-                    user,
-                    isAuthenticated: true,
-                    isLoading: false
-                });
-            } catch (error) {
-                console.error('Failed to parse stored auth:', error);
-                setAuthState(prev => ({ ...prev, isLoading: false }));
-            }
-        } else {
-            setAuthState(prev => ({ ...prev, isLoading: false }));
-        }
+    // Track if this is a new signup (to show onboarding) - check localStorage first
+    const [isNewSignup, setIsNewSignup] = useState(() => {
+        return localStorage.getItem('habitTracker_isNewSignup') === 'true';
+    });
+
+    const clearNewSignupFlag = useCallback(() => {
+        setIsNewSignup(false);
+        localStorage.removeItem('habitTracker_isNewSignup');
     }, []);
 
-    const login = (email: string, password: string): boolean => {
-        // Simple validation for demo purposes
+    /**
+     * Initialize auth state by checking existing session
+     * Called on mount
+     */
+    useEffect(() => {
+        let mounted = true;
+
+        const initializeAuth = async () => {
+            try {
+                const session = await getSession();
+
+                if (mounted) {
+                    if (session?.user) {
+                        setAuthState({
+                            user: toAppUser(session.user),
+                            isAuthenticated: true,
+                            isLoading: false
+                        });
+                    } else {
+                        setAuthState({
+                            user: null,
+                            isAuthenticated: false,
+                            isLoading: false
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error initializing auth:', error);
+                if (mounted) {
+                    setAuthState({
+                        user: null,
+                        isAuthenticated: false,
+                        isLoading: false
+                    });
+                }
+            }
+        };
+
+        initializeAuth();
+
+        // Subscribe to auth state changes
+        const unsubscribe = onAuthStateChange((event: string, session: Session | null) => {
+            if (!mounted) return;
+
+            console.log('Auth state changed:', event);
+
+            switch (event) {
+                case 'SIGNED_IN':
+                case 'TOKEN_REFRESHED':
+                    if (session?.user) {
+                        setAuthState({
+                            user: toAppUser(session.user),
+                            isAuthenticated: true,
+                            isLoading: false
+                        });
+                    }
+                    break;
+
+                case 'SIGNED_OUT':
+                    setAuthState({
+                        user: null,
+                        isAuthenticated: false,
+                        isLoading: false
+                    });
+                    break;
+
+                case 'USER_UPDATED':
+                    if (session?.user) {
+                        setAuthState(prev => ({
+                            ...prev,
+                            user: toAppUser(session.user)
+                        }));
+                    }
+                    break;
+            }
+        });
+
+        // Cleanup subscription on unmount
+        return () => {
+            mounted = false;
+            unsubscribe();
+        };
+    }, []);
+
+    /**
+     * Login with email and password
+     * @returns Object with success status and optional error
+     */
+    const login = useCallback(async (
+        email: string,
+        password: string
+    ): Promise<{ success: boolean; error?: string }> => {
+        // Basic validation
         if (!email || !password) {
-            return false;
+            return { success: false, error: 'Please fill in all fields' };
         }
 
-        // In a real app, this would call an API
-        // For now, we'll just create a user object
-        const user: User = {
-            id: crypto.randomUUID(),
-            email,
-            name: email.split('@')[0],
-            createdAt: new Date().toISOString()
-        };
-
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-        setAuthState({
-            user,
-            isAuthenticated: true,
-            isLoading: false
-        });
-
-        return true;
-    };
-
-    const signup = (name: string, email: string, password: string): boolean => {
-        // Simple validation for demo purposes
-        if (!name || !email || !password || password.length < 6) {
-            return false;
+        if (!email.includes('@')) {
+            return { success: false, error: 'Please enter a valid email' };
         }
 
-        // In a real app, this would call an API
-        const user: User = {
-            id: crypto.randomUUID(),
-            email,
-            name,
-            createdAt: new Date().toISOString()
-        };
+        const result = await signIn(email, password);
 
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-        setAuthState({
-            user,
-            isAuthenticated: true,
-            isLoading: false
-        });
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
 
-        return true;
-    };
+        // Auth state will be updated by the onAuthStateChange listener
+        return { success: true };
+    }, []);
 
-    const logout = () => {
-        localStorage.removeItem(AUTH_STORAGE_KEY);
-        setAuthState({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false
-        });
-    };
+    /**
+     * Sign up a new user
+     * @returns Object with success status and optional error
+     */
+    const signup = useCallback(async (
+        name: string,
+        email: string,
+        password: string
+    ): Promise<{ success: boolean; error?: string; isNewUser?: boolean }> => {
+        // Validation
+        if (!name || !email || !password) {
+            return { success: false, error: 'Please fill in all fields' };
+        }
+
+        if (!email.includes('@')) {
+            return { success: false, error: 'Please enter a valid email' };
+        }
+
+        if (password.length < 6) {
+            return { success: false, error: 'Password must be at least 6 characters' };
+        }
+
+        const result = await signUp(email, password, name);
+
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
+
+        // Mark this as a new signup for onboarding - persist in localStorage
+        setIsNewSignup(true);
+        localStorage.setItem('habitTracker_isNewSignup', 'true');
+
+        // Auth state will be updated by the onAuthStateChange listener
+        return { success: true, isNewUser: true };
+    }, []);
+
+    /**
+     * Logout the current user
+     */
+    const logout = useCallback(async (): Promise<void> => {
+        await signOut();
+        // Auth state will be updated by the onAuthStateChange listener
+    }, []);
 
     return {
         ...authState,
         login,
         signup,
-        logout
+        logout,
+        isNewSignup,
+        clearNewSignupFlag
     };
 };

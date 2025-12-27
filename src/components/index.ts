@@ -8,4 +8,5 @@ export { TrackerTable } from './TrackerTable';
 export { AddHabitButton } from './AddHabitButton';
 export { WeeklyBreakdown } from './WeeklyBreakdown';
 export { AuthForm } from './Auth';
+export { NewUserOnboarding } from './Onboarding';
 
