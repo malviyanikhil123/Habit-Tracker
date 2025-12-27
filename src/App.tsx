@@ -67,9 +67,7 @@ function App() {
     const motivationQuote = useMotivation();
 
     const {
-        currentDayName,
         scheduleType,
-        routineBadge,
         activeTab,
         setActiveTab,
         currentTask,
