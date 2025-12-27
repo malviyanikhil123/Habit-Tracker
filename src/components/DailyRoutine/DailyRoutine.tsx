@@ -8,9 +8,7 @@ import { RoutineEditor } from './RoutineEditor';
 import { DayGroupConfigModal } from './DayGroupConfigModal';
 
 interface DailyRoutineProps {
-    currentDayName: string;
     scheduleType: ScheduleType;
-    routineBadge: { text: string; className: string };
     activeTab: ScheduleType;
     setActiveTab: (tab: ScheduleType) => void;
     currentTask: RoutineItem | null;
@@ -21,8 +19,6 @@ interface DailyRoutineProps {
 }
 
 export function DailyRoutine({
-    currentDayName,
-    routineBadge,
     activeTab,
     setActiveTab,
     currentTask,

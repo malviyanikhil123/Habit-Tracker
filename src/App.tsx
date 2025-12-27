@@ -109,9 +109,7 @@ function App() {
             <MotivationBanner quote={motivationQuote} />
 
             <DailyRoutine
-                currentDayName={currentDayName}
                 scheduleType={scheduleType}
-                routineBadge={routineBadge}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 currentTask={currentTask}
