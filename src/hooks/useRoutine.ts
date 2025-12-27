@@ -29,26 +29,51 @@ interface UseRoutineReturn {
     updateRoutineForSchedule: (scheduleType: ScheduleType, routines: RoutineItem[]) => void;
 }
 
-export function useRoutine(): UseRoutineReturn {
+interface UseRoutineParams {
+    userId: string | null;
+}
+
+export function useRoutine({ userId }: UseRoutineParams): UseRoutineReturn {
     const [activeTab, setActiveTab] = useState<ScheduleType>('monday');
     const [currentTask, setCurrentTask] = useState<RoutineItem | null>(null);
+
+    // Get user-specific routine key
+    const getRoutineKey = (uid: string | null) => {
+        return uid ? `${CUSTOM_ROUTINES_KEY}_${uid}` : CUSTOM_ROUTINES_KEY;
+    };
+
     const [customRoutines, setCustomRoutinesState] = useState<DailyRoutines | null>(() => {
-        const saved = localStorage.getItem(CUSTOM_ROUTINES_KEY);
+        if (!userId) return null;
+        const saved = localStorage.getItem(getRoutineKey(userId));
         return saved ? JSON.parse(saved) : null;
     });
+
+    // Update routines when userId changes
+    useEffect(() => {
+        if (!userId) {
+            setCustomRoutinesState(null);
+            return;
+        }
+        const saved = localStorage.getItem(getRoutineKey(userId));
+        setCustomRoutinesState(saved ? JSON.parse(saved) : null);
+    }, [userId]);
 
     const routines = customRoutines || EMPTY_ROUTINES;
     const hasCustomRoutines = customRoutines !== null;
 
     const setCustomRoutines = useCallback((newRoutines: DailyRoutines) => {
         setCustomRoutinesState(newRoutines);
-        localStorage.setItem(CUSTOM_ROUTINES_KEY, JSON.stringify(newRoutines));
-    }, []);
+        if (userId) {
+            localStorage.setItem(getRoutineKey(userId), JSON.stringify(newRoutines));
+        }
+    }, [userId]);
 
     const resetToDefaultRoutines = useCallback(() => {
         setCustomRoutinesState(null);
-        localStorage.removeItem(CUSTOM_ROUTINES_KEY);
-    }, []);
+        if (userId) {
+            localStorage.removeItem(getRoutineKey(userId));
+        }
+    }, [userId]);
 
     const updateRoutineForSchedule = useCallback((scheduleType: ScheduleType, newRoutines: RoutineItem[]) => {
         const currentRoutines = customRoutines || EMPTY_ROUTINES;

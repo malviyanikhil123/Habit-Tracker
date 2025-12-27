@@ -86,7 +86,7 @@ function App() {
         hasCustomRoutines,
         resetToDefaultRoutines,
         updateRoutineForSchedule
-    } = useRoutine();
+    } = useRoutine({ userId: user?.id ?? null });
 
     // Handle onboarding completion with optional custom routines
     const handleOnboardingComplete = (customRoutines?: DailyRoutines) => {

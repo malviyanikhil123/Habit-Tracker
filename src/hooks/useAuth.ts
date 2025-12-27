@@ -222,6 +222,8 @@ export const useAuth = (): UseAuthReturn => {
      * Logout the current user
      */
     const logout = useCallback(async (): Promise<void> => {
+        // Clear the new signup flag on logout
+        localStorage.removeItem('habitTracker_isNewSignup');
         await signOut();
         // Auth state will be updated by the onAuthStateChange listener
     }, []);
