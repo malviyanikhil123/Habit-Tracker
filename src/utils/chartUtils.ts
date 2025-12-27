@@ -81,7 +81,7 @@ export function renderBarChart(
 
     const grid = getCssVar('--color-border-soft') || '#A6E3E9';
     const bar = '#71C9CE';
-    const text = getCssVar('--color-text-muted') || '#4a6a6c';
+    // const text = getCssVar('--color-text-muted') || '#4a6a6c';
     const textMain = getCssVar('--color-text-main') || '#2f2f2f';
 
     // Grid
