@@ -63,8 +63,8 @@ body {
 
 .main-header h1 {
     font-size: 32px;
-    font-weight: 300;
-    color: #ffffff;
+    font-weight: 500;
+    color: var(--color-text-main);
     letter-spacing: -0.5px;
 }
 
@@ -76,7 +76,8 @@ body {
 
 #currentMonth {
     font-size: 16px;
-    color: #E3FDFD;
+    font-weight: 500;
+    color: var(--color-text-main);
     font-weight: 400;
 }
 
@@ -314,28 +315,10 @@ body {
     background-color: #CBF1F5;
 }
 
-/* Current Running Week Highlight - Same style as other weeks, just with fire emoji */
-.week-header.current-week {
-    background-color: #CBF1F5;
-    color: #2f2f2f;
-    font-weight: 500;
-}
-
+/* Current Running Week Highlight */
 .week-header.current-week::after {
     content: " 🔥";
     font-size: 12px;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.4;
-    }
 }
 
 /* Day Headers */
@@ -428,14 +411,6 @@ body {
 /* Table Body Rows */
 .tracker-table tbody tr {
     transition: background 0.15s ease;
-}
-
-.tracker-table tbody tr:nth-child(odd) {
-    background: #CBF1F5;
-    --row-bg: #CBF1F5;
-}
-
-.tracker-table tbody tr:nth-child(even) {
     background: #CBF1F5;
     --row-bg: #CBF1F5;
 }
@@ -464,14 +439,7 @@ body {
     max-width: var(--habit-col-width);
     border-right: 2px solid #A6E3E9;
     box-shadow: 6px 0 12px -4px rgba(0, 0, 0, 0.1);
-}
-
-.tracker-table tbody tr:nth-child(odd) .habit-name-cell {
     background-color: #E3FDFD;
-}
-
-.tracker-table tbody tr:nth-child(even) .habit-name-cell {
-    background-color: #CBF1F5;
 }
 
 .tracker-table tbody tr:hover .habit-name-cell {
@@ -571,11 +539,6 @@ body {
     border-color: #ef5350;
 }
 
-.past-day input[type="checkbox"]:checked::after {
-    border-left: 2px solid #ffffff;
-    border-bottom: 2px solid #ffffff;
-}
-
 /* Today Column Highlight */
 .today-column {
     background: #A6E3E9 !important;
@@ -583,9 +546,7 @@ body {
 }
 
 .day-header-row .today-column {
-    background: #A6E3E9 !important;
     font-weight: 700;
-    color: #2f2f2f;
 }
 
 /* Week grouping separators (assigned by JS with .week-start) */
@@ -790,4 +751,311 @@ body {
 
 .tracker-wrapper::-webkit-scrollbar-thumb {
     background: transparent;
+}
+
+/* ================================================
+   DAILY ROUTINE SECTION
+   ================================================ */
+
+.daily-routine-section {
+    background: #E3FDFD;
+    border: 1px solid #A6E3E9;
+    border-radius: var(--radius-md);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-softer);
+}
+
+.routine-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #CBF1F5;
+}
+
+.routine-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.routine-icon {
+    font-size: 24px;
+}
+
+.routine-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2f2f2f;
+    margin: 0;
+}
+
+.routine-day-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#currentDayName {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2f2f2f;
+}
+
+.routine-badge {
+    background: #71C9CE;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.routine-badge.weekend {
+    background: #ff9f43;
+}
+
+.routine-badge.sunday {
+    background: #a55eea;
+}
+
+/* Routine Tabs */
+.routine-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.routine-tab {
+    padding: 10px 20px;
+    border: 1px solid #A6E3E9;
+    background: #CBF1F5;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4a6a6c;
+    transition: all 0.2s ease;
+}
+
+.routine-tab:hover {
+    background: #A6E3E9;
+    color: #2f2f2f;
+}
+
+.routine-tab.active {
+    background: #71C9CE;
+    color: #fff;
+    border-color: #71C9CE;
+}
+
+/* Routine Schedule */
+.routine-schedule {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.routine-schedule.active {
+    display: flex;
+}
+
+.routine-schedule::-webkit-scrollbar {
+    width: 6px;
+}
+
+.routine-schedule::-webkit-scrollbar-track {
+    background: #E3FDFD;
+    border-radius: 3px;
+}
+
+.routine-schedule::-webkit-scrollbar-thumb {
+    background: #A6E3E9;
+    border-radius: 3px;
+}
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    max-width: 89vw;
+    background: #CBF1F5;
+    border-radius: 8px;
+    border-left: 4px solid #A6E3E9;
+    transition: all 0.2s ease;
+}
+
+.schedule-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(113, 201, 206, 0.2);
+}
+
+.schedule-item.morning {
+    border-left-color: #ffd93d;
+    background: linear-gradient(to right, rgba(255, 217, 61, 0.15), #CBF1F5);
+}
+
+.schedule-item.work {
+    border-left-color: #00b894;
+    background: linear-gradient(to right, rgba(0, 184, 148, 0.15), #CBF1F5);
+}
+
+.schedule-item.study {
+    border-left-color: #0984e3;
+    background: linear-gradient(to right, rgba(9, 132, 227, 0.15), #CBF1F5);
+}
+
+.schedule-item.project {
+    border-left-color: #6c5ce7;
+    background: linear-gradient(to right, rgba(108, 92, 231, 0.15), #CBF1F5);
+}
+
+.schedule-item.break {
+    border-left-color: #fd79a8;
+    background: linear-gradient(to right, rgba(253, 121, 168, 0.15), #CBF1F5);
+}
+
+.schedule-item.evening {
+    border-left-color: #ff7675;
+    background: linear-gradient(to right, rgba(255, 118, 117, 0.15), #CBF1F5);
+}
+
+.schedule-item.night {
+    border-left-color: #a29bfe;
+    background: linear-gradient(to right, rgba(162, 155, 254, 0.15), #CBF1F5);
+}
+
+.schedule-item.current-task {
+    border-left-color: #71C9CE;
+    background: linear-gradient(135deg, #71C9CE, #A6E3E9);
+    color: #fff;
+    animation: pulse-task 2s ease-in-out infinite;
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(113, 201, 206, 0.4);
+}
+
+.schedule-item.current-task .time,
+.schedule-item.current-task .task {
+    color: #fff;
+}
+
+@keyframes pulse-task {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 15px rgba(113, 201, 206, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 4px 25px rgba(113, 201, 206, 0.6);
+    }
+}
+
+.schedule-item .time {
+    min-width: 150px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a6a6c;
+}
+
+.schedule-item .task {
+    font-size: 14px;
+    color: #2f2f2f;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.schedule-item .task-icon {
+    font-size: 16px;
+}
+
+/* Current Task Highlight */
+.current-task-highlight {
+    margin-top: 16px;
+    padding: 20px;
+    background: linear-gradient(135deg, #71C9CE 0%, #A6E3E9 100%);
+    border-radius: 12px;
+    text-align: center;
+    display: none;
+}
+
+.current-task-highlight.active {
+    display: block;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.current-task-label {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--color-text-main);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.current-task-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-main);
+    margin-bottom: 4px;
+}
+
+.current-task-time {
+    font-size: 14px;
+    color: var(--color-text-main);
+}
+
+@media (max-width: 768px) {
+    .routine-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .routine-tabs {
+        width: 100%;
+    }
+
+    .routine-tab {
+        flex: 1;
+        text-align: center;
+        padding: 8px 12px;
+    }
+
+    .schedule-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .schedule-item .time {
+        min-width: auto;
+        font-size: 12px;
+    }
+
+    .current-task-name {
+        font-size: 16px;
+    }
 }

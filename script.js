@@ -804,3 +804,222 @@ function loadFromLocalStorage() {
         }
     }
 }
+
+// ================================================
+// DAILY ROUTINE SYSTEM
+// ================================================
+
+const dailyRoutines = {
+    weekday: [
+        { time: '6:30 AM – 7:00 AM', task: 'Wake up, freshen up', icon: '🌅', type: 'morning' },
+        { time: '7:00 AM – 7:40 AM', task: 'DSA Practice', icon: '💻', type: 'study' },
+        { time: '7:40 AM – 8:00 AM', task: 'English Practice', icon: '📖', type: 'study' },
+        { time: '8:00 AM – 8:30 AM', task: 'Breakfast & Get Ready', icon: '🍳', type: 'break' },
+        { time: '8:30 AM – 7:30 PM', task: 'Office Hours', icon: '🏢', type: 'work' },
+        { time: '7:30 PM – 8:30 PM', task: 'Travel + Dinner + Rest', icon: '🚗', type: 'break' },
+        { time: '8:30 PM – 9:30 PM', task: 'DevOps Learning & Practice', icon: '⚙️', type: 'study' },
+        { time: '9:30 PM – 10:00 PM', task: 'SQL Practice', icon: '🗃️', type: 'study' },
+        { time: '10:00 PM – 10:20 PM', task: 'Wind Down', icon: '🧘', type: 'evening' },
+        { time: '10:30 PM', task: 'Sleep', icon: '😴', type: 'night' }
+    ],
+    saturday: [
+        { time: '7:30 AM – 8:00 AM', task: 'Wake up + Fresh', icon: '🌅', type: 'morning' },
+        { time: '8:00 AM – 10:00 AM', task: 'OpsGuardian Project', icon: '🛡️', type: 'project' },
+        { time: '10:00 AM – 10:30 AM', task: 'Long Break', icon: '☕', type: 'break' },
+        { time: '10:30 AM – 12:00 PM', task: 'OpsGuardian Project', icon: '🛡️', type: 'project' },
+        { time: '12:00 PM – 1:00 PM', task: 'Lunch + Rest', icon: '🍽️', type: 'break' },
+        { time: '1:00 PM – 2:30 PM', task: 'SQL Deep Practice', icon: '🗃️', type: 'study' },
+        { time: '2:30 PM – 4:00 PM', task: 'Long Rest / Personal Time', icon: '🛋️', type: 'break' },
+        { time: '4:30 PM – 5:30 PM', task: 'DSA Revision', icon: '💻', type: 'study' },
+        { time: '5:30 PM – 6:30 PM', task: 'Walk / Outing', icon: '🚶', type: 'break' },
+        { time: '7:30 PM – 8:30 PM', task: 'English Practice', icon: '📖', type: 'evening' },
+        { time: '8:30 PM onwards', task: 'Free Time', icon: '🎮', type: 'night' }
+    ],
+    sunday: [
+        { time: '8:00 AM – 8:30 AM', task: 'Wake up slowly', icon: '🌅', type: 'morning' },
+        { time: '8:30 AM – 10:00 AM', task: 'OpsGuardian Project', icon: '🛡️', type: 'project' },
+        { time: '10:00 AM – 10:30 AM', task: 'Long Break', icon: '☕', type: 'break' },
+        { time: '10:30 AM – 11:30 AM', task: 'OpsGuardian Project', icon: '🛡️', type: 'project' },
+        { time: '12:00 PM – 1:00 PM', task: 'Lunch', icon: '🍽️', type: 'break' },
+        { time: '1:00 PM – 3:00 PM', task: 'Full Rest / Personal Time', icon: '🛋️', type: 'break' },
+        { time: '3:00 PM – 4:00 PM', task: 'English Practice', icon: '📖', type: 'study' },
+        { time: '5:00 PM – 6:00 PM', task: 'Next Week Planning', icon: '📋', type: 'study' },
+        { time: '6:00 PM onwards', task: 'Relax, Family, Entertainment', icon: '👨‍👩‍👧', type: 'night' }
+    ]
+};
+
+function initializeDailyRoutine() {
+    renderRoutineSchedules();
+    updateCurrentDay();
+    attachRoutineEventListeners();
+    highlightCurrentTask();
+
+    // Update current task every minute
+    setInterval(highlightCurrentTask, 60000);
+}
+
+function renderRoutineSchedules() {
+    Object.keys(dailyRoutines).forEach(scheduleType => {
+        const container = document.getElementById(`${scheduleType}-schedule`);
+        if (!container) return;
+
+        container.innerHTML = dailyRoutines[scheduleType].map(item => `
+            <div class="schedule-item ${item.type}" data-time="${item.time}">
+                <span class="time">${item.time}</span>
+                <span class="task">
+                    <span class="task-icon">${item.icon}</span>
+                    ${item.task}
+                </span>
+            </div>
+        `).join('');
+    });
+}
+
+function updateCurrentDay() {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const today = new Date().getDay();
+    const dayName = days[today];
+
+    document.getElementById('currentDayName').textContent = dayName;
+
+    const badge = document.getElementById('routineType');
+    const tabs = document.querySelectorAll('.routine-tab');
+    const schedules = document.querySelectorAll('.routine-schedule');
+
+    // Remove all active states
+    tabs.forEach(tab => tab.classList.remove('active'));
+    schedules.forEach(schedule => schedule.classList.remove('active'));
+
+    let activeTab, activeSchedule;
+
+    if (today === 0) { // Sunday
+        badge.textContent = 'Sunday';
+        badge.className = 'routine-badge sunday';
+        activeTab = document.querySelector('[data-tab="sunday"]');
+        activeSchedule = document.getElementById('sunday-schedule');
+    } else if (today === 6) { // Saturday
+        badge.textContent = 'Weekend';
+        badge.className = 'routine-badge weekend';
+        activeTab = document.querySelector('[data-tab="saturday"]');
+        activeSchedule = document.getElementById('saturday-schedule');
+    } else { // Weekday
+        badge.textContent = 'Weekday';
+        badge.className = 'routine-badge';
+        activeTab = document.querySelector('[data-tab="weekday"]');
+        activeSchedule = document.getElementById('weekday-schedule');
+    }
+
+    if (activeTab) activeTab.classList.add('active');
+    if (activeSchedule) activeSchedule.classList.add('active');
+}
+
+function attachRoutineEventListeners() {
+    document.querySelectorAll('.routine-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active from all tabs and schedules
+            document.querySelectorAll('.routine-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.routine-schedule').forEach(s => s.classList.remove('active'));
+
+            // Activate clicked tab and corresponding schedule
+            tab.classList.add('active');
+            const scheduleId = `${tab.dataset.tab}-schedule`;
+            document.getElementById(scheduleId)?.classList.add('active');
+
+            // Re-highlight current task for the active schedule
+            highlightCurrentTask();
+        });
+    });
+}
+
+function parseTimeRange(timeStr) {
+    // Parse time strings like "6:30 AM – 7:00 AM" or "10:30 PM"
+    const parts = timeStr.split('–').map(s => s.trim());
+
+    const parseTime = (str) => {
+        // Handle "onwards" case
+        if (str.includes('onwards')) {
+            str = str.replace(' onwards', '').trim();
+        }
+
+        const match = str.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (!match) return null;
+
+        let hours = parseInt(match[1]);
+        const minutes = parseInt(match[2]);
+        const period = match[3].toUpperCase();
+
+        if (period === 'PM' && hours !== 12) hours += 12;
+        if (period === 'AM' && hours === 12) hours = 0;
+
+        return hours * 60 + minutes;
+    };
+
+    const start = parseTime(parts[0]);
+    let end = parts[1] ? parseTime(parts[1]) : start + 60; // Default 1 hour if no end time
+
+    // Handle "onwards" - extend to end of day
+    if (timeStr.includes('onwards')) {
+        end = 23 * 60 + 59;
+    }
+
+    return { start, end };
+}
+
+function highlightCurrentTask() {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const today = now.getDay();
+
+    // Determine which schedule to check based on current day
+    let scheduleType;
+    if (today === 0) scheduleType = 'sunday';
+    else if (today === 6) scheduleType = 'saturday';
+    else scheduleType = 'weekday';
+
+    const schedule = dailyRoutines[scheduleType];
+    const highlight = document.getElementById('currentTaskHighlight');
+    const taskName = document.getElementById('currentTaskName');
+    const taskTime = document.getElementById('currentTaskTime');
+
+    // Remove current-task class from all items
+    document.querySelectorAll('.schedule-item').forEach(item => {
+        item.classList.remove('current-task');
+    });
+
+    // Find current task
+    let currentTask = null;
+    for (const item of schedule) {
+        const { start, end } = parseTimeRange(item.time);
+        if (start !== null && currentMinutes >= start && currentMinutes < end) {
+            currentTask = item;
+            break;
+        }
+    }
+
+    if (currentTask) {
+        // Show highlight box
+        highlight.classList.add('active');
+        taskName.textContent = `${currentTask.icon} ${currentTask.task}`;
+        taskTime.textContent = currentTask.time;
+
+        // Highlight the item in the schedule if it's visible
+        const activeSchedule = document.querySelector('.routine-schedule.active');
+        if (activeSchedule) {
+            const items = activeSchedule.querySelectorAll('.schedule-item');
+            items.forEach(item => {
+                if (item.dataset.time === currentTask.time) {
+                    item.classList.add('current-task');
+                    // Scroll into view
+                    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+    } else {
+        highlight.classList.remove('active');
+    }
+}
+
+// Initialize daily routine when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    initializeDailyRoutine();
+});

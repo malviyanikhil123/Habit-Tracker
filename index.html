@@ -28,6 +28,39 @@
         </div>
     </section>
 
+    <!-- Daily Routine Section -->
+    <section class="daily-routine-section">
+        <div class="routine-header">
+            <div class="routine-header-left">
+                <span class="routine-icon">🗓️</span>
+                <h2>Daily Routine</h2>
+            </div>
+            <div class="routine-day-indicator">
+                <span id="currentDayName">Loading...</span>
+                <span class="routine-badge" id="routineType">Weekday</span>
+            </div>
+        </div>
+        <div class="routine-tabs">
+            <button class="routine-tab" data-tab="weekday">Mon-Fri</button>
+            <button class="routine-tab" data-tab="saturday">Saturday</button>
+            <button class="routine-tab" data-tab="sunday">Sunday</button>
+        </div>
+        <div class="routine-content">
+            <!-- Weekday Schedule -->
+            <div class="routine-schedule" id="weekday-schedule"></div>
+            <!-- Saturday Schedule -->
+            <div class="routine-schedule" id="saturday-schedule"></div>
+            <!-- Sunday Schedule -->
+            <div class="routine-schedule" id="sunday-schedule"></div>
+        </div>
+        <!-- Current Task Highlight -->
+        <div class="current-task-highlight" id="currentTaskHighlight">
+            <div class="current-task-label">⏰ Current Focus</div>
+            <div class="current-task-name" id="currentTaskName">Loading...</div>
+            <div class="current-task-time" id="currentTaskTime"></div>
+        </div>
+    </section>
+
     <!-- Smart Reminder Section -->
     <div id="smartReminder" class="smart-reminder"></div>
 
